@@ -120,13 +120,28 @@ spark.plugins                                org.apache.spark.CometPlugin
 spark.comet.enabled                          true
 spark.comet.exec.enabled                     true
 spark.comet.exec.shuffle.enabled             true
-spark.shuffle.manager                        org.apache.spark.sql.comet.execution.shuffle.CometShuffleManager
 spark.sql.extensions                         org.apache.comet.CometSparkSessionExtensions
 spark.comet.explainFallback.enabled          true
 ```
 
 > `spark.comet.explainFallback.enabled=true` logs why operators fall back to
 > vanilla Spark — useful for seeing how much of the plan Comet actually took.
+
+> **Update — `spark.shuffle.manager` line removed.** This config block used to
+> include:
+> ```
+> spark.shuffle.manager   org.apache.spark.sql.comet.execution.shuffle.CometShuffleManager
+> ```
+> That line was **removed from the Databricks cluster config** because Comet's
+> `CometShuffleManager` does not work between Databricks' forked Spark and OSS
+> Spark — it threw the `AbstractMethodError` at shuffle time (see the
+> compatibility-wall note below). Dropping it falls shuffle back to DBR's native
+> Spark shuffle so the pipeline can actually run.
+>
+> Open question: with the shuffle manager gone, how much (if any) of the plan
+> still executes in Comet. The fact the error fired at all proves parts of the
+> Spark plan *were* using Comet — next step is to get the pipeline running, then
+> use `EXPLAIN` (and `explainFallback`) to see what Comet still accelerates.
 
 > **Known compatibility wall.** Even with the right jar and configs, the Comet
 > `CometShuffleManager` can collide with DBR's forked Spark `ShuffleManager`
