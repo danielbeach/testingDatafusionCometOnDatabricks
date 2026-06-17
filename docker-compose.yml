@@ -1,0 +1,9 @@
+services:
+  comet-builder:
+    platform: linux/amd64
+    build: .
+    container_name: comet-builder
+    volumes:
+      - ./workspace:/workspace
+      - ./output:/workspace/output
+    command: /usr/local/bin/build-comet.sh
